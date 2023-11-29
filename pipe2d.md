@@ -1,23 +1,16 @@
 # Installation
 
-For the most up-to-date version of the pipe2d pipeline, installation
-needs to be done through script. The script can be cloned from the
-pfs_pipe2d repository.
+For the most up-to-date version of the `pipe2d` pipeline, installation needs to be done through script. The script can be cloned from the `pfs_pipe2d` repository.
 
 ```
 $ git clone http://github.com/Subaru-PFS/pfs_pipe2d  
 $ cd pfs_pipe2d/bin
 ```
-
-
-
-Note: currently, pipe2d can only be installed to CentOS-7 system.
+Note: currently, `pipe2d` can only be installed to CentOS-7 system.
 
 ## Dependencies
 
-Before installing the pipeline, make sure git-lfs is installed. You can
-check it with command *git lfs install*. If it is not installed, you can
-install the binaries and set up configurations as follows.
+Before installing the pipeline, make sure `git-lfs` is installed. You can check it with command `git lfs install`. If it is not installed, you can install the binaries and set up configurations as follows.
 
 ```
 $ sudo yum install -y epel-release
@@ -32,7 +25,7 @@ $ tar xzf git-lfs-linux-amd64-v3.4.0.tar.gz$cd git-lfs-3.4.0
 $ PREFIX=$(dirname $(command -v git)) ./install.sh
 ```
 
-Note: \textit{wget} sometimes does not work due to illegal characters. Please type the command instead of copying when error \textit{"No such file or directory"} appears.
+Note: `wget` sometimes does not work due to illegal characters. Please type the command instead of copying when error `No such file or directory` appears.
 
 The following packages are also required.
 ```
@@ -41,7 +34,7 @@ $ install bison blas bzip2 bzip2-devel cmake curl flex fontconfig freetype-devel
 
 ## Install LSST + PFS
 
-Enter the directory where pfs_pipe2d is in.
+Enter the directory where `pfs_pipe2d` is in.
 ```
 $ mkdir -p pfs 
 $ mkdir -p pfs/stack 
