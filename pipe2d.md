@@ -8,7 +8,7 @@ For the most up-to-date version of the pipe2d pipeline, installation
 needs to be done through script. The script can be cloned from the
 pfs_pipe2d repository.
 
-`$ git clone http://github.com/Subaru-PFS/pfs_pipe2d
+`$ git clone http://github.com/Subaru-PFS/pfs_pipe2d  
 $ cd pfs_pipe2d/bin`
 
 Note: currently, pipe2d can only be installed to CentOS-7 system.
