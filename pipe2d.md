@@ -192,4 +192,4 @@ For Hilo server
 $ coaddSpectra.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
 ```
 
-The output is `pfsObject`.
+The output is `pfsObject` (stacked spectrum for each object).
