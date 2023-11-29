@@ -87,7 +87,7 @@ $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
 Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the step above.
 If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
 
-The data processing starts with ingesting calibrations.
+The data processing starts with ingesting calibrations.  
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/dataRepo/CALIB/calib_test`
 ```
 $ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/BIAS/*.fits
@@ -97,7 +97,7 @@ $ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longl
 $ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DETECTORMAP/*.fits
 ```
 
-The next step is to ingest raw science images.
+The next step is to ingest raw science images.  
 Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check datamodel for more information.)
 
 Note: in each data repository, raw image can be ingested only once
