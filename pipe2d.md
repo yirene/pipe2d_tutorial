@@ -1,7 +1,3 @@
----
-title: PFS 2D pipeline pipe2d tutorial
----
-
 # Installation
 
 For the most up-to-date version of the pipe2d pipeline, installation
