@@ -43,15 +43,19 @@ $ ./install_pfs.sh -t current ../../pfs/stack
 $ source  /pfs/stack/loadLSST.bash 
 $ setup pfs_pipe2d -t current
 ```
+`setup` command is used to load packages. You can use `-t` to select the package with a specific tag or specify the version at the end, e.g. `setup pfs_pipe2d w.2023.46`. If you would like to remove a package from the environment, you can use `unsetup` command.
+
 
 Then, we need to install the flux model data.
-
 ```
 $ wget https://hscdata.mtk.nao.ac.jp/hsc_bin_dist/pfs/fluxmodeldata-ambre-20230608.tar.gz
 $ tar xzf fluxmodeldata-ambre-20230608.tar.gz -C /PATH/TO/pfs_pipe2d
-$ cd /PATH/TO/pfs_pipe2d/fluxmodeldata-ambre-20230608$$./install.py --prefix=/PATH #the package will be installed in /PATH/fluxmodeldata
-$ setup -jr /PATH/fluxmodeldata
+$ cd /PATH/TO/pfs_pipe2d/fluxmodeldata-ambre-20230608
+$ ./install.py --prefix=/PATH/TO/pfs/stack
+$ setup -jr /PATH/TO/pfs/stack/fluxmodeldata
 ```
+The package will be installed in path given with flag `--prefix`. It is suggested to install `fluxmodeldata` under `/PATH/TO/pfs/stack`.
+Here the flag `-j` means *just* this package, and flag `-r PRODUCTDIR` gives the path to the package you would like to load.
 
 ## Testing installation
 You can check pipeline version by `eups list -s pfs_pipe2d` and check all loaded packages by `eups list`
@@ -85,7 +89,10 @@ $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
 ```
 
 Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the step above.
+
 If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
+
+
 
 The data processing starts with ingesting calibrations.  
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/dataRepo/CALIB/calib_test`
@@ -98,14 +105,13 @@ $ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longl
 ```
 
 The next step is to ingest raw science images.  
-Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check datamodel for more information.)
+Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check [datamodel](https://github.com/Subaru-PFS/datamodel/blob/a5eb4c04878dd58b2dfeb1eeda9a15fee8e7e717/datamodel.txt) for more information.)
 
-Note: in each data repository, raw image can be ingested only once
+Note: in each data repository, raw image can be ingested only once.
 ```
 $ ingestPfsImages.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/dataRepo/pfsConfig -- /PATH/TO/pfs/dataRepo/data/PFSA*.fits
 ```
-Note: `/PATH/TO/pfs/dataRepo` should be the same throughout the data processing.
-Note: `--calib=/PATH/TO/pfs/dataRepo/CALIB` should contain `registry.sqlite3` file.
+Note: `/PATH/TO/pfs/dataRepo` should be the same throughout the data processing. `--calib=/PATH/TO/pfs/dataRepo/CALIB` should contain `registry.sqlite3` file.
 
 This step creates ingested calibrations in `/PATH/TO/pfs/dataRepo/CALIB`, and ingested images in `/PATH/TO/pfs/dataRepo/OBSERVATION-DATE`. It also puts the mask design used in ingestion (pfsConfig file) in `/PATH/TO/pfs/dataRepo/pfsConfig/OBSERVATION-DATE`.
 
