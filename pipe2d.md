@@ -96,7 +96,7 @@ $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
 ```
 
 Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the last step.
-
+If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
 
 The data processing starts with ingesting calibrations.
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/dataRepo/CALIB/calib_test`
@@ -108,42 +108,40 @@ $ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longl
 $ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DETECTORMAP/*.fits
 ```
 
-# Ingest images
-# Note: raw data file name is in the format "PF\%1sA\%06d\%1d\%1d.fits" (site, visit, spectrograph, armNum)
-#armNum
-#1: Blue
-#2: Red
-#3: IR
-#4: Medium resolution red
-# Note: raw data can be ingested only once
-ingestPfsImages.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/dataRepo/pfsConfig -- /PATH/TO/pfs/dataRepo/data/PFSA*.fits
+The next step is to ingest raw science images.
+Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check datamodel for more information.)
 
-# Note: /PATH/TO/pfs/dataRepo should be the same throughout the data processing
-# Note: --calib=/PATH/TO/pfs/dataRepo/CALIB should contain registry.sqlite3 file
-\end{codebox}
-This step creates ingested calibrations in /PATH/TO/pfs/dataRepo/CALIB, and ingested images in /PATH/TO/pfs/dataRepo/OBSERVATION-DATE. It also put mask design used in ingestion (pfsConfig file) in /PATH/TO/pfs/dataRepo/pfsConfig/OBSERVATION-DATE.
+Note: in each data repository, raw image can be ingested only once
+```
+$ ingestPfsImages.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/dataRepo/pfsConfig -- /PATH/TO/pfs/dataRepo/data/PFSA*.fits
+```
+Note: `/PATH/TO/pfs/dataRepo` should be the same throughout the data processing.
+Note: `--calib=/PATH/TO/pfs/dataRepo/CALIB` should contain `registry.sqlite3` file.
 
-Next, you need to set the defects.
-\begin{codebox}
-makePfsDefects --mko #--mko is for observation data taken in Mauna Kea. For integration test, it should be --lam
-ingestCuratedCalibs.py /PATH/TO/pfs/dataRepo --calib /PATH/To/pfs/dataRepo/CALIB /PATH/TO/pfs/stack/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/w.2023.42/curated/pfs/defects
-\end{codebox}
+This step creates ingested calibrations in `/PATH/TO/pfs/dataRepo/CALIB`, and ingested images in `/PATH/TO/pfs/dataRepo/OBSERVATION-DATE`. It also puts the mask design used in ingestion (pfsConfig file) in `/PATH/TO/pfs/dataRepo/pfsConfig/OBSERVATION-DATE`.
 
-If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set, so you can skip these two steps.
+Then, you need to set the defects.
+```
+$ makePfsDefects --mko 
+$ ingestCuratedCalibs.py /PATH/TO/pfs/dataRepo --calib /PATH/To/pfs/dataRepo/CALIB /PATH/TO/pfs/stack/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/w.2023.42/curated/pfs/defects
+```
+Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--lam` for integration test.
 
-If you were running pipe2d on Hilo server for the first time, you need to set the permission.
-\begin{codebox}$ echo \*:\*:registry_gen2:pfs:pfs_hilo_opdb \> .pgpass
+If you were running pipe2d on the Hilo server for the first time, you need to set the permission before data processing.
+```
+$ echo *:*:registry_gen2:pfs:pfs_hilo_opdb > .pgpass
 $chmod 0600 ~/.pgpass
-\end{codebox}
+```
 
-You can now extract spectra using reduceExposure.py.
-\begin{codebox}
+You can now extract spectra using `reduceExposure.py`.
+
 # VISIT-ID is a 6 digit number
 # All output files will be in directory /PATH/TO/pfs/dataRepo/OUTPUT$
+```
 reduceExposure.py /PATH/TO/pfs/dataRepo
 --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --rerun=OUTPUT --longlog=1
 --doraise --id visit=VISIT-ID
-
+```
 \# If you were running the pipeline on Hilo server, use the following
 arguments \# All output files will be in directory
 /work/drp/rerun/USERNAME/test_processing
