@@ -54,7 +54,7 @@ $ setup -jr /PATH/fluxmodeldata
 ```
 
 ## Testing installation
-You can check pipeline version by `$ eups list -s pfs_pipe2d` and check all loaded packages by `$ eups list`
+You can check pipeline version by `eups list -s pfs_pipe2d` and check all loaded packages by `eups list`
 
 Then you can test if the pipeline is working properly by running the integration test.
 ```
