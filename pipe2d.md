@@ -84,7 +84,7 @@ $ mkdir -p dataRepo
 $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
 ```
 
-Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the last step.
+Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the step above.
 If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
 
 The data processing starts with ingesting calibrations.
