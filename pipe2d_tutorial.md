@@ -88,13 +88,13 @@ $ mkdir -p dataRepo
 $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
 ```
 The data processing procedure follows the following flowchart.
-![](/tutorial/flowchart.png)
+![Alt text](https://github.com/yirene/tutorial/blob/main/flowchart.png)
 
 Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the step above.
 
 If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
 
-All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to ROOT/rerun/OUTPUT. `--config NAME=VALUE' configs overrides. `--mode {move,copy,link,skip}` determines mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days).
+All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to ROOT/rerun/OUTPUT. `--config NAME=VALUE` configs overrides. `--mode {move,copy,link,skip}` determines mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days).
 
 The data processing starts with ingesting calibrations.  
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/dataRepo/CALIB/calib_test`
