@@ -130,81 +130,71 @@ Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--l
 If you were running pipe2d on the Hilo server for the first time, you need to set the permission before data processing.
 ```
 $ echo *:*:registry_gen2:pfs:pfs_hilo_opdb > .pgpass
-$chmod 0600 ~/.pgpass
+$ chmod 0600 ~/.pgpass
 ```
 
 You can now extract spectra using `reduceExposure.py`.
 
-# VISIT-ID is a 6 digit number
-# All output files will be in directory /PATH/TO/pfs/dataRepo/OUTPUT$
 ```
-reduceExposure.py /PATH/TO/pfs/dataRepo
---calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --rerun=OUTPUT --longlog=1
---doraise --id visit=VISIT-ID
+$ reduceExposure.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
 ```
-\# If you were running the pipeline on Hilo server, use the following
-arguments \# All output files will be in directory
-/work/drp/rerun/USERNAME/test_processing
-$reduceExposure.py /work/drp --calib=/work/drp/CALIB --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
+VISIT-ID in the command is a 6 digit number. And all output files will be in `/PATH/TO/pfs/dataRepo/OUTPUT`.
+Set `-j="$NCORES"` for parallel processing.
 
-# For visitd without dithered flat, error "No locations for get: datasetType:flat" will rise. In this case, add argument --config isr.doFlat=False --clobber-config
-# Set -j="$NCORES\" for parallel processing
-:::
+If you were running the pipeline on Hilo server, use the following arguments. 
+```
+$ reduceExposure.py /work/drp --calib=/work/drp/CALIB --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
+```
+All output files will be in `/work/drp/rerun/USERNAME/test_processing`.
 
-This step creates the following folders, config, postIsrCcd, apCorr,
-pfsArm, arcLines, calExp, DETECTORMAP. *postIsrCcd* and *calExp* are
-calibrated images. *calExp* add an extension of PSF model. *apCorr*
-contains 2D spectral calibration. *pfsArm* contains reduced and
-wavelength-calibrated spectra for each arm (flux calibration is not done
-yet). *arcLines* contains information of spectral line measurements.
+There are some visits without dithered flat file. `reduceExposure.py` will report the error "No locations for get: datasetType:flat". In this case, add argument `--config isr.doFlat=False --clobber-config`
+
+This step creates the following folders, `config`, `postIsrCcd`, `apCorr`, `pfsArm`, `arcLines`, `calExp`, `DETECTORMAP`. `postIsrCcd` and `calExp` are calibrated images. `calExp` has an extra extension of PSF model. `apCorr` contains 2D spectral calibration. `pfsArm` contains reduced and wavelength-calibrated spectra for each arm (flux calibration has not been done yet). `arcLines` contains information on spectral line measurements.
 
 In the next step, you can merge spectra taken by different arms.
 
-::: {.codebox}
-$mergeArms.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+```
+$ mergeArms.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+```
+For Hilo server
+```
+$ mergeArms.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+```
 
-# For Hilo server$ mergeArms.py /work/drp --calib=/work/drp/CALIB
---clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1
---doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
-:::
+This step outputs `pfsMerged` (merged spectra for each fiber).
 
-This step output pfsMerged (merged spectra for each fiber).
+The next step is to fit model spectra to observed fluxes and prepare for flux calibration.
 
-Next step fits model spectra to observed fluxes, in preparation for flux
-calibration.
+```
+$ fitPfsFluxReference.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+```
+For Hilo server
+```
+$ fitPfsFluxReference.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing --longlog=1 --clobber-config --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+```
 
-::: {.codebox}
-$fitPfsFluxReference.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
-
-# For Hilo server$ fitPfsFluxReference.py /work/drp
---calib=/work/drp/CALIB --clobber-config
---rerun=USERNAME/test_processing --longlog=1 --clobber-config --doraise
---id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
-:::
-
-This step outputs pfsFluxReference.
+This step outputs `pfsFluxReference`.
 
 Then you can do flux calibration.
 
-::: {.codebox}
-$fitFluxCal.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+```
+$ fitFluxCal.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+```
+For Hilo server
+```
+$ fitFluxCal.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+```
 
-# For Hilo server$ fitFluxCal.py /work/drp --calib=/work/drp/CALIB
---clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1
---doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
-:::
+It outputs `fluxCal` and `pfsSingle` (flux calibrated spectra from single observation).
 
-It outputs fluxCal and pfsSingle (flux calibrated spectra from single
-observation).
+The final step is to combine all spectra of repeat observations.
 
-The final step is to coadd all spectra of repeat observations.
+```
+$ coaddSpectra.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+```
+For Hilo server
+```
+$ coaddSpectra.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+```
 
-::: {.codebox}
-$coaddSpectra.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
-
-# For Hilo server$ coaddSpectra.py /work/drp --calib=/work/drp/CALIB
---clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1
---doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
-:::
-
-The output is pfsObject.
+The output is `pfsObject`.
