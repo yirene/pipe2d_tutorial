@@ -39,69 +39,74 @@ $ PREFIX=$(dirname $(command -v git)) ./install.sh
 Note: \textit{wget} sometimes does not work due to illegal characters. Please type the command instead of copying when error \textit{"No such file or directory"} appears.
 
 The following packages are also required.
-`$ install bison blas bzip2 bzip2-devel cmake curl flex fontconfig freetype-devel gawk gcc-c++ gcc-gfortran gettext git glib2-devel java-1.8.0-openjdk libcurl-devel libuuid-devel libXext libXrender libXt-devel make mesa-libGL ncurses-devel openssl-devel patch perl perl-ExtUtils-MakeMaker readline-devel sed tar which zlib-dev`
+```
+$ install bison blas bzip2 bzip2-devel cmake curl flex fontconfig freetype-devel gawk gcc-c++ gcc-gfortran gettext git glib2-devel java-1.8.0-openjdk libcurl-devel libuuid-devel libXext libXrender libXt-devel make mesa-libGL ncurses-devel openssl-devel patch perl perl-ExtUtils-MakeMaker readline-devel sed tar which zlib-dev
+```
 
 ## Install LSST + PFS
 
 Enter the directory where pfs_pipe2d is in.
-
-'$ mkdir -p pfs 
+```
+$ mkdir -p pfs 
 $ mkdir -p pfs/stack 
 $ cd pfs_pipe2d/bin 
 $ ./install_pfs.sh -t current ../../pfs/stack 
 $ source  /pfs/stack/loadLSST.bash 
-$ setup pfs_pipe2d -t current'
+$ setup pfs_pipe2d -t current
+```
 
 Then, we need to install the flux model data.
 
-
-'$ wget https://hscdata.mtk.nao.ac.jp/hsc_bin_dist/pfs/fluxmodeldata-ambre-20230608.tar.gz
+```
+$ wget https://hscdata.mtk.nao.ac.jp/hsc_bin_dist/pfs/fluxmodeldata-ambre-20230608.tar.gz
 $ tar xzf fluxmodeldata-ambre-20230608.tar.gz -C /PATH/TO/pfs_pipe2d
 $ cd /PATH/TO/pfs_pipe2d/fluxmodeldata-ambre-20230608$$./install.py --prefix=/PATH #the package will be installed in /PATH/fluxmodeldata
-$ setup -jr /PATH/fluxmodeldata'
+$ setup -jr /PATH/fluxmodeldata
+```
 
 ## Testing installation
-Version of loaded pipeline and packages can be checked by
+You can check pipeline version by `$ eups list -s pfs_pipe2d` and check all loaded packages by `$ eups list`
 
-'$ eups list -s pfs_pipe2d # check pipeline version
-$ eups list # check all loaded packages'
+Then you can test if the pipeline is working properly by running the integration test.
+```
+$ mkdir -p /PATH/TO/integrationTest
+$ cd /PATH/TO/integrationTest
+$ pfs_integration_test.sh -c 4 .
+```
 
-Then run the integration test.
-\begin{codebox}$mkdir -p /PATH/TO/integrationTest
-$cd /PATH/TO/integrationTest
-pfs_integration_test.sh -c 4 .
-\end{codebox}
+# Data processing
+Before starting data processing, you need to activate the pipeline environment and load the necessary packages.
+```
+$ source /PATH/TO/pfs/stack/loadLSST.bash
+$ setup pfs_pipe2d -t current
+$ setup -jr /PATH/TO/pfs/stack/fluxmodeldata
+```
+If you were running the pipeline on the Hilo server, set up the environment as follows.
+```
+$ source /work/stack/loadLSST.bash
+$ setup pfs_pipe2d w.2023.45
+$ setup -jr /work/fluxCal/fluxmodeldata-ambre-20230608-full/
+```
 
-\section{Data processing}
-Before starting data processing, you must activate the pipeline environment and load the necessary packages.
-\begin{codebox}
-source /PATH/TO/pfs/stack/loadLSST.bash
-setup pfs_pipe2d -t current
-setup -jr /PATH/TO/pfs/stack/fluxmodeldata
+The next step is to create a data repository and put *_mapper* in it.
+```
+$ cd /PATH/TO/pfs
+$ mkdir -p dataRepo
+$ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
+```
 
-#If you were running the pipeline on Hilo server, set up the environment as follows.
-source /work/stack/loadLSST.bash
-setup pfs_pipe2d w.2023.45
-setup -jr /work/fluxCal/fluxmodeldata-ambre-20230608-full/
-\end{codebox}
+Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the last step.
 
-Create a data repository and put \textit{\_mapper} in it.
-\begin{codebox}
-cd /PATH/TO/pfs
-mkdir -p dataRepo
-echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
-\end{codebox}
 
-Download images, calibration and pfsConfig from the Hilo server to the empty data repository created in the last step.\\
-Ingest calibration and images first.
-\begin{codebox}
-# Ingest calibrations
-# Note: it is suggested to put downloaded calibration files in directory /PATH/TO/pfs/dataRepo/CALIB/calib_test
-ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/BIAS/*.fits
-ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DARK/*.fits
-ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/FLAT/*.fits
-ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/FIBERPROFILES/*.fits
-ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DETECTORMAP/*.fits
+The data processing starts with ingesting calibrations.
+Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/dataRepo/CALIB/calib_test`
+```
+$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/BIAS/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DARK/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/FLAT/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/FIBERPROFILES/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DETECTORMAP/*.fits
+```
 
 # Ingest images
 # Note: raw data file name is in the format "PF\%1sA\%06d\%1d\%1d.fits" (site, visit, spectrograph, armNum)
