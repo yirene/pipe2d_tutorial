@@ -87,6 +87,8 @@ $ cd /PATH/TO/pfs
 $ mkdir -p dataRepo
 $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
 ```
+The data processing procedure follows the following flowchart.
+![](/tutorial/flowchart.png)
 
 Now you can download images, calibrations and pfsConfig files from the Hilo server to the empty data repository created in the step above.
 
