@@ -11,6 +11,14 @@ pfs_pipe2d repository.
 `$ git clone http://github.com/Subaru-PFS/pfs_pipe2d  
 $ cd pfs_pipe2d/bin`
 
+
+```
+action: function(ctx) {
+    workflow.check(!ctx.issue.isChanged('votes'), workflow.i18n('Voting for a resolved issue is not allowed.'));
+},
+```
+
+
 Note: currently, pipe2d can only be installed to CentOS-7 system.
 
 ## Dependencies
