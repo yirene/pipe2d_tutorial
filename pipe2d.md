@@ -23,20 +23,23 @@ Before installing the pipeline, make sure git-lfs is installed. You can
 check it with command *git lfs install*. If it is not installed, you can
 install the binaries and set up configurations as follows.
 
-```$ sudo yum install -y epel-release
+```
+$ sudo yum install -y epel-release
 $ sudo yum install -y git-lfs
-$ git lfs install```
+$ git lfs install
+```
 
 You can also install git-lfs without admin permission. Choose a directory you want to install git-lfs in.
-::: {.codebox}
+```
 $ wget https://github.com/git-lfs/git-lfs/releases/download/v3.4.0/git-lfs-linux-amd64-v3.4.0.tar.gz
 $ tar xzf git-lfs-linux-amd64-v3.4.0.tar.gz$cd git-lfs-3.4.0
 $ PREFIX=$(dirname $(command -v git)) ./install.sh
-:::
+```
+
 Note: \textit{wget} sometimes does not work due to illegal characters. Please type the command instead of copying when error \textit{"No such file or directory"} appears.
 
 The following packages are also required.
-'$ install bison blas bzip2 bzip2-devel cmake curl flex fontconfig freetype-devel gawk gcc-c++ gcc-gfortran gettext git glib2-devel java-1.8.0-openjdk libcurl-devel libuuid-devel libXext libXrender libXt-devel make mesa-libGL ncurses-devel openssl-devel patch perl perl-ExtUtils-MakeMaker readline-devel sed tar which zlib-dev'
+`$ install bison blas bzip2 bzip2-devel cmake curl flex fontconfig freetype-devel gawk gcc-c++ gcc-gfortran gettext git glib2-devel java-1.8.0-openjdk libcurl-devel libuuid-devel libXext libXrender libXt-devel make mesa-libGL ncurses-devel openssl-devel patch perl perl-ExtUtils-MakeMaker readline-devel sed tar which zlib-dev`
 
 ## Install LSST + PFS
 
