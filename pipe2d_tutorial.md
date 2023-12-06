@@ -96,21 +96,21 @@ If you were processing PFS data on the Hilo server, the data and calibration are
 `pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. In the following sample, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` configs overrides. `--mode {move, copy, link, skip}` determines the mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days).
 
 The data processing starts with ingesting calibrations.  
-Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`
+Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`.  It is also suggested to execute all commands at the same location and write down a log to file `test_processing.log` by `2>&1 | tee -a test_processing.log`. 
 ```
-$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/BIAS/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/DARK/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FLAT/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FIBERPROFILES/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/drp/CALIB/DETECTORMAP/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/BIAS/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/DARK/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FIBERPROFILES/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/drp/CALIB/DETECTORMAP/*.fits 2>&1 | tee -a test_processing.log
 ```
 
 The next step is to ingest raw science images.  
 Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check [datamodel](https://github.com/Subaru-PFS/datamodel/blob/a5eb4c04878dd58b2dfeb1eeda9a15fee8e7e717/datamodel.txt) for more information.)
 
-Note: in each data repository, raw image can be ingested only once.
+Note: in each data repository, raw images can be ingested only once.
 ```
-$ ingestPfsImages.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/drp/pfsConfig -- /PATH/TO/pfs/drp/data/PFSA*.fits
+$ ingestPfsImages.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/drp/pfsConfig -- /PATH/TO/pfs/drp/data/PFSA*.fits 2>&1 | tee -a test_processing.log
 ```
 Note: `/PATH/TO/pfs/drp` should be the same throughout the data processing. `--calib=/PATH/TO/pfs/drp/rerun/CALIB` should contain `registry.sqlite3` file.
 
@@ -119,11 +119,11 @@ This step creates ingested calibrations in `/PATH/TO/pfs/drp/CALIB`, and ingeste
 Then, you need to set the defects.
 ```
 $ makePfsDefects --mko 
-$ ingestCuratedCalibs.py /PATH/TO/pfs/drp --calib /PATH/To/pfs/drp/CALIB /PATH/TO/pfs/stack/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/w.2023.42/curated/pfs/defects
+$ ingestCuratedCalibs.py /PATH/TO/pfs/drp --calib /PATH/TO/pfs/drp/CALIB /PATH/TO/pfs/stack/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/w.2023.42/curated/pfs/defects 2>&1 | tee -a test_processing.log
 ```
-Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--lam` for integration test.
+Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--lam` for the integration test.
 
-If you were running pipe2d on the Hilo server for the first time, you need to set the permission before data processing.
+If you were running pipe2d on the Hilo server for the first time, you need to set access to the postgreSQL repository before data processing.
 ```
 $ echo *:*:registry_gen2:pfs:pfs_hilo_opdb > .pgpass
 $ chmod 0600 ~/.pgpass
@@ -132,16 +132,16 @@ $ chmod 0600 ~/.pgpass
 You can now extract spectra using `reduceExposure.py`.
 
 ```
-$ reduceExposure.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ reduceExposure.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
-VISIT-ID in the command is a 6 digit number. And all output files will be in `/PATH/TO/pfs/drp/OUTPUT`.
+VISIT-ID in the command is a 6-digit number. And all output files will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`.
 Set `-j="$NCORES"` for parallel processing.
 
-If you were running the pipeline on Hilo server, use the following arguments. 
+If you were running the pipeline on the Hilo server, use the following arguments. 
 ```
-$ reduceExposure.py /work/drp --calib=/work/drp/CALIB --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
+$ reduceExposure.py /work/drp --calib=/work/drp/CALIB --rerun=USERNAME/OUTPUT -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
-All output files will be in `/work/drp/rerun/USERNAME/test_processing`.
+All output files will be in `/work/drp/rerun/USERNAME/OUTPUT`.
 
 There are some visits without dithered flat file. `reduceExposure.py` will report the error "No locations for get: datasetType:flat". In this case, add argument `--config isr.doFlat=False --clobber-config`
 
@@ -150,11 +150,11 @@ This step creates the following folders, `config`, `postIsrCcd`, `apCorr`, `pfsA
 In the next step, you can merge spectra taken by different arms.
 
 ```
-$ mergeArms.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ mergeArms.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 For Hilo server
 ```
-$ mergeArms.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+$ mergeArms.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
 This step outputs `pfsMerged` (merged spectra for each fiber).
@@ -162,11 +162,11 @@ This step outputs `pfsMerged` (merged spectra for each fiber).
 The next step is to fit model spectra to observed fluxes and prepare for flux calibration.
 
 ```
-$ fitPfsFluxReference.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ fitPfsFluxReference.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 For Hilo server
 ```
-$ fitPfsFluxReference.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing --longlog=1 --clobber-config --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+$ fitPfsFluxReference.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing --longlog=1 --clobber-config --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
 This step outputs `pfsFluxReference`.
@@ -174,11 +174,11 @@ This step outputs `pfsFluxReference`.
 Then you can do flux calibration.
 
 ```
-$ fitFluxCal.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ fitFluxCal.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 For Hilo server
 ```
-$ fitFluxCal.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+$ fitFluxCal.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
 It outputs `fluxCal` and `pfsSingle` (flux calibrated spectra from single observation).
@@ -186,11 +186,11 @@ It outputs `fluxCal` and `pfsSingle` (flux calibrated spectra from single observ
 The final step is to combine all spectra of repeat observations.
 
 ```
-$ coaddSpectra.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ coaddSpectra.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 For Hilo server
 ```
-$ coaddSpectra.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2\>&1 \| tee -a test_processing.log
+$ coaddSpectra.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
 The output is `pfsObject` (stacked spectrum for each object).
