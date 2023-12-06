@@ -36,14 +36,13 @@ $ install bison blas bzip2 bzip2-devel cmake curl flex fontconfig freetype-devel
 
 Enter the directory where `pfs_pipe2d` is in.
 ```
-$ mkdir -p pfs 
 $ mkdir -p pfs/stack 
 $ cd pfs_pipe2d/bin 
 $ ./install_pfs.sh -t current ../../pfs/stack 
-$ source  /pfs/stack/loadLSST.bash 
+$ source  ../../pfs/stack/loadLSST.bash 
 $ setup pfs_pipe2d -t current
 ```
-`setup` command is used to load packages. You can use `-t` to select the package with a specific tag or specify the version at the end, e.g. `setup pfs_pipe2d w.2023.46`. If you would like to remove a package from the environment, you can use `unsetup` command.
+`setup` command is used to load packages. You can use `-t` to select the package with a specific tag or specify the version at the end, e.g. `setup pfs_pipe2d w.2023.46`. When not specified, the default setting will load package with *current* tag. If you would like to remove a package from the environment, you can use `unsetup` command.
 
 
 Then, we need to install the flux model data.
@@ -54,11 +53,11 @@ $ cd /PATH/TO/pfs_pipe2d/fluxmodeldata-ambre-20230608
 $ ./install.py --prefix=/PATH/TO/pfs/stack
 $ setup -jr /PATH/TO/pfs/stack/fluxmodeldata
 ```
-The package will be installed in path given with flag `--prefix`. It is suggested to install `fluxmodeldata` under `/PATH/TO/pfs/stack`.
-Here the flag `-j` means *just* this package, and flag `-r PRODUCTDIR` gives the path to the package you would like to load.
+The package will be installed in the path given with the flag `--prefix`. It is suggested to install `fluxmodeldata` under `/PATH/TO/pfs/stack`.
+Here the flag `-j` means *just* this package, and the flag `-r PRODUCTDIR` gives the path to the package you would like to load.
 
 ## Testing installation
-You can check pipeline version by `eups list -s pfs_pipe2d` and check all loaded packages by `eups list`
+You can check the pipeline version by `eups list -s pfs_pipe2d` and check all loaded packages by `eups list`
 
 Then you can test if the pipeline is working properly by running the integration test.
 ```
@@ -77,15 +76,15 @@ $ setup -jr /PATH/TO/pfs/stack/fluxmodeldata
 If you were running the pipeline on the Hilo server, set up the environment as follows.
 ```
 $ source /work/stack/loadLSST.bash
-$ setup pfs_pipe2d w.2023.45
+$ setup pfs_pipe2d -t current
 $ setup -jr /work/fluxCal/fluxmodeldata-ambre-20230608-full/
 ```
 
 The next step is to create a data repository and put *_mapper* in it.
 ```
 $ cd /PATH/TO/pfs
-$ mkdir -p dataRepo
-$ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/dataRepo/_mapper
+$ mkdir -p drp
+$ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/drp/_mapper
 ```
 The data processing procedure follows the following flowchart.
 ![Alt text](flowchart.png)
@@ -94,16 +93,16 @@ Now you can download images, calibrations and pfsConfig files from the Hilo serv
 
 If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
 
-All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to ROOT/rerun/OUTPUT. `--config NAME=VALUE` configs overrides. `--mode {move,copy,link,skip}` determines mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days).
+`pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. In the following sample, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` configs overrides. `--mode {move, copy, link, skip}` determines the mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days).
 
 The data processing starts with ingesting calibrations.  
-Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/dataRepo/CALIB/calib_test`
+Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`
 ```
-$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/BIAS/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DARK/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/FLAT/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/FIBERPROFILES/*.fits
-$ ingestPfsCalibs.py /PATH/TO/pfs/dataRepo --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/dataRepo/CALIB/calib_test/DETECTORMAP/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/BIAS/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/DARK/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FLAT/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FIBERPROFILES/*.fits
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=1800 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/drp/CALIB/DETECTORMAP/*.fits
 ```
 
 The next step is to ingest raw science images.  
@@ -111,16 +110,16 @@ Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit
 
 Note: in each data repository, raw image can be ingested only once.
 ```
-$ ingestPfsImages.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/dataRepo/pfsConfig -- /PATH/TO/pfs/dataRepo/data/PFSA*.fits
+$ ingestPfsImages.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir=/PATH/TO/pfs/drp/pfsConfig -- /PATH/TO/pfs/drp/data/PFSA*.fits
 ```
-Note: `/PATH/TO/pfs/dataRepo` should be the same throughout the data processing. `--calib=/PATH/TO/pfs/dataRepo/CALIB` should contain `registry.sqlite3` file.
+Note: `/PATH/TO/pfs/drp` should be the same throughout the data processing. `--calib=/PATH/TO/pfs/drp/rerun/CALIB` should contain `registry.sqlite3` file.
 
-This step creates ingested calibrations in `/PATH/TO/pfs/dataRepo/CALIB`, and ingested images in `/PATH/TO/pfs/dataRepo/OBSERVATION-DATE`. It also puts the mask design used in ingestion (pfsConfig file) in `/PATH/TO/pfs/dataRepo/pfsConfig/OBSERVATION-DATE`.
+This step creates ingested calibrations in `/PATH/TO/pfs/drp/CALIB`, and ingested images in `/PATH/TO/pfs/drp/OBSERVATION-DATE`. It also puts the mask design used in ingestion (pfsConfig file) in `/PATH/TO/pfs/drp/pfsConfig/OBSERVATION-DATE`.
 
 Then, you need to set the defects.
 ```
 $ makePfsDefects --mko 
-$ ingestCuratedCalibs.py /PATH/TO/pfs/dataRepo --calib /PATH/To/pfs/dataRepo/CALIB /PATH/TO/pfs/stack/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/w.2023.42/curated/pfs/defects
+$ ingestCuratedCalibs.py /PATH/TO/pfs/drp --calib /PATH/To/pfs/drp/CALIB /PATH/TO/pfs/stack/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/w.2023.42/curated/pfs/defects
 ```
 Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--lam` for integration test.
 
@@ -133,9 +132,9 @@ $ chmod 0600 ~/.pgpass
 You can now extract spectra using `reduceExposure.py`.
 
 ```
-$ reduceExposure.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ reduceExposure.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
 ```
-VISIT-ID in the command is a 6 digit number. And all output files will be in `/PATH/TO/pfs/dataRepo/OUTPUT`.
+VISIT-ID in the command is a 6 digit number. And all output files will be in `/PATH/TO/pfs/drp/OUTPUT`.
 Set `-j="$NCORES"` for parallel processing.
 
 If you were running the pipeline on Hilo server, use the following arguments. 
@@ -151,7 +150,7 @@ This step creates the following folders, `config`, `postIsrCcd`, `apCorr`, `pfsA
 In the next step, you can merge spectra taken by different arms.
 
 ```
-$ mergeArms.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ mergeArms.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
 ```
 For Hilo server
 ```
@@ -163,7 +162,7 @@ This step outputs `pfsMerged` (merged spectra for each fiber).
 The next step is to fit model spectra to observed fluxes and prepare for flux calibration.
 
 ```
-$ fitPfsFluxReference.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ fitPfsFluxReference.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
 ```
 For Hilo server
 ```
@@ -175,7 +174,7 @@ This step outputs `pfsFluxReference`.
 Then you can do flux calibration.
 
 ```
-$ fitFluxCal.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ fitFluxCal.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
 ```
 For Hilo server
 ```
@@ -187,7 +186,7 @@ It outputs `fluxCal` and `pfsSingle` (flux calibrated spectra from single observ
 The final step is to combine all spectra of repeat observations.
 
 ```
-$ coaddSpectra.py /PATH/TO/pfs/dataRepo --calib=/PATH/TO/pfs/dataRepo/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
+$ coaddSpectra.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB -j=8 --clobber-config --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID
 ```
 For Hilo server
 ```
