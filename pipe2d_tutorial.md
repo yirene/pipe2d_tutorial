@@ -143,7 +143,7 @@ $ reduceExposure.py /work/drp --calib=/work/drp/CALIB --rerun=USERNAME/OUTPUT -j
 ```
 All output files will be in `/work/drp/rerun/USERNAME/OUTPUT`.
 
-There are some visits without dithered flat file. `reduceExposure.py` will report the error "No locations for get: datasetType:flat". In this case, add argument `--config isr.doFlat=False --clobber-config`
+There are some visits without corresponding dithered flats. `reduceExposure.py` will report the error "No locations for get: datasetType:flat". In this case, add argument `--config isr.doFlat=False --clobber-config`
 
 This step creates the following folders, `config`, `postIsrCcd`, `apCorr`, `pfsArm`, `arcLines`, `calExp`, `DETECTORMAP`. `postIsrCcd` and `calExp` are calibrated images. `calExp` has an extra extension of PSF model. `apCorr` contains 2D spectral calibration. `pfsArm` contains reduced and wavelength-calibrated spectra for each arm (flux calibration has not been done yet). `arcLines` contains information on spectral line measurements.
 
@@ -157,9 +157,9 @@ For Hilo server
 $ mergeArms.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
-This step outputs `pfsMerged` (merged spectra for each fiber).
+This step outputs `pfsMerged` (merged spectra for each visit).
 
-The next step is to fit model spectra to observed fluxes and prepare for flux calibration.
+The next step is to fit stellar spectra from the AMBRE stellar library to each of the observed FLUXSTD to derive a flux calibration vector.
 
 ```
 $ fitPfsFluxReference.py /PATH/TO/pfs/drp --calib=/PATH/TO/pfs/drp/rerun/CALIB --clobber-config -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
@@ -169,7 +169,7 @@ For Hilo server
 $ fitPfsFluxReference.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing --longlog=1 --clobber-config --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
-This step outputs `pfsFluxReference`.
+This step outputs `pfsFluxReference`. It is a collection of the best-fit model templates for all of FLUXSTDs.
 
 Then you can do flux calibration.
 
@@ -181,7 +181,7 @@ For Hilo server
 $ fitFluxCal.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
-It outputs `fluxCal` and `pfsSingle` (flux calibrated spectra from single observation).
+In this step, the flux calibration vectors are merged to generate a master flux calibration vector for each visit and it is applied to all of the science fibers in the same visit. It outputs `fluxCal` (the master flux calibration vector) and `pfsSingle` (flux calibrated spectra from single observation).
 
 The final step is to combine all spectra of repeat observations.
 
