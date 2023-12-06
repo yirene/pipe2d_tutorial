@@ -93,14 +93,14 @@ Now you can download images, calibrations and pfsConfig files from the Hilo serv
 
 If you were processing PFS data on the Hilo server, the data and calibration are already ingested, and environments are already set. You can skip ingestion and defects setting steps.
 
-`pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. In the following sample, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` configs overrides. `--mode {move, copy, link, skip}` determines the mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days).
+`pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. In the following sample, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` configs overrides. `--mode {move, copy, link, skip}` determines the mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days). `--longlog=1` enables more verbose logging.
 
 The data processing starts with ingesting calibrations.  
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`.  It is also suggested to execute all commands at the same location and write down a log to file `test_processing.log` by `2>&1 | tee -a test_processing.log`. 
 ```
 $ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/BIAS/*.fits 2>&1 | tee -a test_processing.log
 $ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/DARK/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
 $ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- /PATH/TO/pfs/drp/CALIB/FIBERPROFILES/*.fits 2>&1 | tee -a test_processing.log
 $ ingestPfsCalibs.py /PATH/TO/pfs/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise --config clobber=True -- /PATH/TO/pfs/drp/CALIB/DETECTORMAP/*.fits 2>&1 | tee -a test_processing.log
 ```
