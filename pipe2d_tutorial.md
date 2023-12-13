@@ -135,7 +135,7 @@ You can now extract spectra using `reduceExposure.py`.
 ```
 $ reduceExposure.py "$PFS_PATH"/drp --calib="$PFS_PATH"/drp/rerun/CALIB -j=8 --rerun=OUTPUT --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
-VISIT-ID in the command is a 6-digit number. And all output files will be in `"$PFS_PATH"/drp/rerun/OUTPUT`.
+VISIT-ID in the command is a 6-digit number. When you want to reduce multiple visits, you can use .. to give a range and ^ to join different visits. All output files will be in `"$PFS_PATH"/drp/rerun/OUTPUT`.
 Set `-j="$NCORES"` for parallel processing.
 
 If you were running the pipeline on the Hilo server, use the following arguments. 
@@ -182,7 +182,7 @@ For Hilo server
 $ fitFluxCal.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USERNAME/test_processing -j=8 --longlog=1 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_processing.log
 ```
 
-In this step, the flux calibration vectors are merged to generate a master flux calibration vector for each visit and it is applied to all of the science fibers in the same visit. It outputs `fluxCal` (the master flux calibration vector) and `pfsSingle` (flux calibrated spectra from single observation).
+In this step, the flux calibration vectors are merged to generate a master flux calibration vector for each visit and it is applied to all of the science fibers in the same visit. It outputs `fluxCal` (the master flux calibration vector) and `pfsSingle` (flux-calibrated spectra from a single observation).
 
 The final step is to combine all spectra of repeat observations.
 
@@ -195,3 +195,54 @@ $ coaddSpectra.py /work/drp --calib=/work/drp/CALIB --clobber-config --rerun=USE
 ```
 
 The output is `pfsObject` (stacked spectrum for each object).
+
+
+# Constructing calibrations (unfinished)
+*Calibs* are calibration products where the behaviour of the instrument is modelled. Calibs are created in the order `BIAS`, `DARK`, `FLAT`, `FIBERPROFILES`, `DETECTORMAP`(wavelength solution).
+
+Note: This section only discusses constructing calibs on the Hilo server. Commands should be similar if you work locally, but please take care of paths of data repository and calibs.
+
+## Preparation
+Before starting to build calibs, you need to make a repository for calibs.
+```
+mkdir -p /work/drp/rerun/USERNAME/CALIB
+```
+Then you can ingest some model detector maps and defects to the calib repository.
+```
+ingestPfsCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB "$DRP_PFS_DATA_DIR"/detectorMap/detectorMap-sim-*.fits --mode=copy --validity 1000 2>&1 | tee -a test_calib.log
+ingestCuratedCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB "$DRP_PFS_DATA_DIR"/curated/pfs/defects 2>&1 | tee -a test_calib.log
+```
+
+## Calibration products
+The information of raw calibration images can be found on [wiki page](https://sumire.pbworks.com). You can find the data type, arm, observation date and other information useful in selecting data to process in the following steps. It is suggested to use visit ID to specify the raw calib images you want to process. If necessary, you can use `arm=ARM` to produce calibs of specific arms (e.g., `arm=b^r`. Check [datamodel](https://github.com/Subaru-PFS/datamodel/blob/a5eb4c04878dd58b2dfeb1eeda9a15fee8e7e717/datamodel.txt) for keywords).
+
+You need to start with `BIAS`.
+```
+constructPfsBias.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
+ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/BIAS/*.fits 2>&1 | tee -a test_calib.log
+```
+This step will put `BIAS` products under `/work/drp/rerun/USERNAME/CALIB/BIAS`.
+Then `DARK`.
+```
+constructPfsDark.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
+ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DARK/*.fits 2>&1 | tee -a test_calib.log
+```
+This step will put `DARK` products under `/work/drp/rerun/USERNAME/CALIB/DARK`.
+Next is `FLAT`.
+```
+constructFiberFlat.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID arm=ARM 2>&1 | tee -a test_calib.log
+ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/FLAT/*.fits 2>&1 | tee -a test_calib.log
+```
+This will put `FLAT` products under `/work/drp/rerun/USERNAME/CALIB/FLAT`.
+Afterwards, you can construct `FIBERPROFILES`.
+```
+constructFiberProfiles.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID arm=ARM slitOffset=0.0 2>&1 | tee -a test_calib.log
+ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/FIBERPROFILES/*.fits 2>&1 | tee -a test_calib.log
+```
+This will put `FIBERPROFILES` products under `/work/drp/rerun/USERNAME/CALIB/FIBERPROFILES`.
+And last one is `DETECTORMAP`(wavelength solution).
+```
+reduceArc.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test -j 8 --id visit=VISIT-ID arm=ARM 2>&1 | tee -a test_calib.log
+ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DETECTORMAP/*.fits 2>&1 | tee -a test_calib.log
+```
+This will put `DETECTORMAP` products under `/work/drp/rerun/USERNAME/CALIB/DETECTORMAP`.
