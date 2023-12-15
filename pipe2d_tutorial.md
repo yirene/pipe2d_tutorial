@@ -207,10 +207,18 @@ Before starting to build calibs, you need to make a repository for calibs.
 ```
 $ mkdir -p /work/drp/rerun/USERNAME/CALIB
 ```
-Then you can ingest some model detector maps and defects to the calib repository.
+
+In constructing calibrations, "$DRP_PFS_DATA_DIR" needs to be a writable directory, therefore it is suggested to copy the content to `\work\USERNAME`. You also need to setup the new path of "$DRP_PFS_DATA_DIR".
 ```
+$ setup -jr /work/USERNAME/drp_pfs_data
+```
+
+Then you can ingest some model detector maps, defects and IPC files to the calib repository.
+```
+$ makePfsDefects --mko 2>&1 | tee -a calib15dec2023.log
 $ ingestPfsCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB "$DRP_PFS_DATA_DIR"/detectorMap/detectorMap-sim-*.fits --mode=copy --validity 1000 2>&1 | tee -a test_calib.log
 $ ingestCuratedCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB "$DRP_PFS_DATA_DIR"/curated/pfs/defects 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/maozy/test_calib_15dec23 --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/CALIB/IPC/*.fits 2>&1 | tee -a calib15dec2023.log
 ```
 
 ## Calibration products
@@ -246,3 +254,11 @@ $ reduceArc.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME
 $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DETECTORMAP/*.fits 2>&1 | tee -a test_calib.log
 ```
 This will put `DETECTORMAP` products under `/work/drp/rerun/USERNAME/CALIB/DETECTORMAP`.
+
+## Build calibs from scratch
+`bootstrapDetectorMap.py` can transform the simulated `DETECTORMAP` to approach actual `DETECTORMAP` used in observation.
+
+```
+bootstrapDetectorMap.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --flatId visit=VISIT-ID arm=ARM --arcId visit=VISIT-ID arm=ARM --clobber-config 2>&1 | tee -a test_calib.log
+```
+One thing worth noticing is this commands only work with one visit of flat and one visit of arc, and each visit corresponds to different arm so please check observation information in advance.
