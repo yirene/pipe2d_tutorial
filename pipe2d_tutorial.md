@@ -208,7 +208,7 @@ Before starting to build calibs, you need to make a repository for calibs.
 $ mkdir -p /work/drp/rerun/USERNAME/CALIB
 ```
 
-In constructing calibrations, "$DRP_PFS_DATA_DIR" needs to be a writable directory, therefore it is suggested to copy the content to `\work\USERNAME`. You also need to setup the new path of "$DRP_PFS_DATA_DIR".
+In constructing calibrations, "$DRP_PFS_DATA_DIR" needs to be a writable directory, therefore it is suggested to copy the content (in `/work/stack_INFRA-312/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/VERSION`) to `/work/USERNAME`. You also need to setup the new path of "$DRP_PFS_DATA_DIR".
 ```
 $ setup -jr /work/USERNAME/drp_pfs_data
 ```
