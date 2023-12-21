@@ -236,7 +236,7 @@ $ constructPfsDark.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun U
 $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DARK/*.fits 2>&1 | tee -a test_calib.log
 ```
 This step will put `DARK` products under `/work/drp/rerun/USERNAME/CALIB/DARK`.
-Next is `FLAT`.
+Next is `FLAT`. Note that a dithered flat is needed here.
 ```
 $ constructFiberFlat.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID arm=ARM 2>&1 | tee -a test_calib.log
 $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/FLAT/*.fits 2>&1 | tee -a test_calib.log
@@ -256,7 +256,7 @@ $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity
 This will put `DETECTORMAP` products under `/work/drp/rerun/USERNAME/CALIB/DETECTORMAP`.
 
 ## Build calibs from scratch
-`bootstrapDetectorMap.py` can transform the simulated `DETECTORMAP` to approach actual `DETECTORMAP` used in observation.
+`bootstrapDetectorMap.py` can transform the simulated `DETECTORMAP` to approach actual `DETECTORMAP` used in observation. Here the flat is required to be a quartz at a slit dither of 0.
 
 ```
 bootstrapDetectorMap.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --flatId visit=VISIT-ID arm=ARM --arcId visit=VISIT-ID arm=ARM --clobber-config 2>&1 | tee -a test_calib.log
