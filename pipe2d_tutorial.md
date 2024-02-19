@@ -292,3 +292,9 @@ Then we make rough fiber profiles based on bootstrap detectormap. We need to kno
 constructFiberProfiles.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --rerun=USERNAME/CALIB/calib_test --id visit=103402..103406 arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 isr.doFlat=True doAdjustDetectorMap=True adjustDetectorMap.doSlitOffsets=True --cores 16 --clobber-config 2>&1 | tee -a test_calib.log 
 ```
 Configs `isr.doFlat=True`, `doAdjustDetectorMap=True`, and `adjustDetectorMap.doSlitOffsets=True` are necessary.
+
+### Construct detectormap
+The next step we can use the fiber profiles to make detectormaps.
+```
+$ reduceArc.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID spectrograph=1  -c reduceExposure.isr.doFlat=True reduceExposure.isr.doFlatNir=True fitDetectorMap.doSlitOffsets=True -j 16 --clobber-config --no-versions 2>&1 | tee -a test_calib.log
+```
