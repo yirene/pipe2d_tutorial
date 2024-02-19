@@ -289,12 +289,19 @@ After selecting the proper number of fibers, we need to set the configs for fitt
 ### Construct fiber profiles
 Then we make rough fiber profiles based on bootstrap detectormap. We need to know that the quality of bootstrap detectormaps are not good enough as a proper detectormap. So we can use `constructFiberProfiles.py`, which is not sensitive to detectormap to make fiber profiles in this step. Still we recommend to run for each arm and spectrograph separately.
 ```
-constructFiberProfiles.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --rerun=USERNAME/CALIB/calib_test --id visit=103402..103406 arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 isr.doFlat=True doAdjustDetectorMap=True adjustDetectorMap.doSlitOffsets=True --cores 16 --clobber-config 2>&1 | tee -a test_calib.log 
+constructFiberProfiles.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --rerun=USERNAME/CALIB/calib_test --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 isr.doFlat=True doAdjustDetectorMap=True adjustDetectorMap.doSlitOffsets=True --cores 16 --clobber-config 2>&1 | tee -a test_calib.log 
 ```
 Configs `isr.doFlat=True`, `doAdjustDetectorMap=True`, and `adjustDetectorMap.doSlitOffsets=True` are necessary.
 
 ### Construct detectormap
 The next step we can use the fiber profiles to make detectormaps.
 ```
-$ reduceArc.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID spectrograph=1  -c reduceExposure.isr.doFlat=True reduceExposure.isr.doFlatNir=True fitDetectorMap.doSlitOffsets=True -j 16 --clobber-config --no-versions 2>&1 | tee -a test_calib.log
+$ reduceArc.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID spectrograph=SPECTROGRAPH  -c reduceExposure.isr.doFlat=True reduceExposure.isr.doFlatNir=True fitDetectorMap.doSlitOffsets=True -j 16 --clobber-config --no-versions 2>&1 | tee -a test_calib.log
+```
+In this step, it is necessary to set configs `reduceExposure.isr.doFlat=True`, `reduceExposure.isr.doFlatNir=True` and `fitDetectorMap.doSlitOffsets=True`. 
+
+### Construct final fiber profiles
+The previous fiber profiles were made from bootstrap detectormaps, which were not accurate. Now with appropriate detectormaps, we can make proper fiber profiles.
+```
+$ reduceProfiles.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --normId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 reduceExposure.isr.doFlat=True reduceExposure.doAdjustDetectorMap=True reduceExposure.adjustDetectorMap.doSlitOffsets=True -C configs/profilesConfig-b4.py --clobber-config 2>&1 | tee -a log_calib_06feb24/fiberprofileb4-final.log 
 ```
