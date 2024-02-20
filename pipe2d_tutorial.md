@@ -66,9 +66,10 @@ $ cd /PATH/TO/integrationTest
 $ pfs_integration_test.sh -c 4 .
 ```
 
-# Basic commands of pipe2d pipeline
+# Getting started of pipe2d pipeline
 ## Activate pipeline and load packages
-The pipe2d pipeline is activated as below.
+There are some steps we need to do every time running pipe2d. 
+First is to activate the pipeline. The pipe2d pipeline is activated as below.
 ```
 $ source /PATH/TO/pfs/stack/loadLSST.bash
 $ setup pfs_pipe2d -t current
@@ -83,58 +84,54 @@ Then we need to load some packages that are useful in building calibration and p
 $ setup -jr /PATH/TO/pfs/stack/fluxmodeldata
 $ setup display_matplotlib -t current
 ```
-On pfsa server
+On pfsa server,
 ```
 $ setup -jr /work/fluxCal/fluxmodeldata-ambre-20230608-full/
 $ setup display_matplotlib -t current
 ```
-When you reduce data locally, the next step is to create a data repository and put *_mapper* in it.
+If you work on local data, you need to put all data into one data repository and put *_mapper* in it the first time you run the pipeline.
 ```
-$ cd /PATH/TO/pfs
-$ mkdir -p drp
+$ mkdir -p /PATH/TO/pfs/drp
 $ echo lsst.obs.pfs.PfsMapper > /PATH/TO/pfs/drp/_mapper
 ```
-Now you can download images, calibrations and pfsConfig files from the pfsa server to the empty data repository created in the step above.
-
-If you were working on PFS data on the pfsa server, data repository is already set. But you need to set access to the postgreSQL repository when you run the pipeline for the first time.
+If you were working on PFS data on the pfsa server, you need to set access to the postgreSQL repository when you run the pipeline for the first time. The data repository on pfsa server is `/work/drp`.
 ```
 $ echo *:*:registry_gen2:pfs:pfs_hilo_opdb > .pgpass
 $ chmod 0600 ~/.pgpass
 ```
 
-`pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. In the following sample, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` configs overrides. `--mode {move, copy, link, skip}` determines the mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days). `--longlog=1` enables more verbose logging.
+## Basic information of pipe2d commands
+`pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). The data repository should stay the same throughout the calibration construction and data processing.
 
+All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. When data repository is `/PATH/TO/pfs/drp`, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` sets config parameters, and the keywords are slightly different for each command. When there are many config parameters to set, `--configfile FILENAME` can read the config file. `--show config` can list all config keywords and their default values. `--clobber-config` can overwrite existing config files. `--validity=VALIDITY` sets the calibration validity period (in days). `--longlog 1` enables more verbose logging. `--doraise` can raise an exception on error. For parallel execution, `--cores CORES` can set the number of cores you would like to use for data processing.
 
-Then, you need to set the defects.
+## Set defects
+We need to set defects before making calibration files and data processing.
 ```
 $ makePfsDefects --mko 
-$ ingestCuratedCalibs.py "$PFS_PATH"/drp --calib "$PFS_PATH"/drp/CALIB "$DRP_PFS_DATA_DIR"/curated/pfs/defects 2>&1 | tee -a test_processing.log
+$ ingestCuratedCalibs.py "$PFS_PATH"/drp --calib $PFS_PATH/drp/CALIB $DRP_PFS_DATA_DIR/curated/pfs/defects 2>&1 | tee -a test_processing.log
 ```
 Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--lam` for the integration test.
-
+Note that `$DRP_PFS_DATA_DIR` should be a writable directory. On pfsa server, you can copy `/work/stack_INFRA-312/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/VERSION` (`VERSION` corresponds to pipeline version) to your own directory, e.g., `\home\USERNAME` or `\work\USERNAME`, then load it using `setup -jr /PATH/TO/drp_pfs_data`.
 
 # Constructing calibrations (unfinished)
-*Calibs* are calibration products where the behaviour of the instrument is modelled. Calibs are created in the order `BIAS`, `DARK`, `FLAT`, `FIBERPROFILES`, `DETECTORMAP`(wavelength solution).
+*Calibs* are calibration products where the behaviour of the instrument is modelled. Calibs are created in the order `BIAS`, `DARK`, `FLAT`, `FIBERPROFILES`, `DETECTORMAP`(wavelength solution). On pfsa server, `\work\drp\CALIB` already contains calibration products, which you can ingest and use. It is not necessary to make your own calibrations every time, but when there are major changes on the telescope, it is better to make new CALIBs.
 
 Note: This section only discusses constructing calibs on the pfsa server. Commands should be similar if you work locally, but please take care of paths of data repository and calibs.
 
 ## Preparation
-Before starting to build calibs, you need to make a repository for calibs.
+You can make an empty path as calib repository and another one to save output during calib construction.
 ```
-$ mkdir -p /work/drp/rerun/USERNAME/CALIB
+$ mkdir -p /work/drp/PATH/TO/CALIB
+$ mkdir -p /work/drp/rerun/USERNAME/PATH/TO/OUTPUT
+$ CALIB=/work/drp/PATH/TO/CALIB
+$ RERUN=USERNAME/PATH/TO/OUTPUT
 ```
-
-In constructing calibrations, "$DRP_PFS_DATA_DIR" needs to be a writable directory, therefore it is suggested to copy the content (in `/work/stack_INFRA-312/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/VERSION`) to `/work/USERNAME`. You also need to setup the new path of "$DRP_PFS_DATA_DIR".
+You need to ingest some simulated detector maps, defects and IPC files to the calib repository first.
 ```
-$ setup -jr /work/USERNAME/drp_pfs_data
-```
-
-Then you can ingest some model detector maps, defects and IPC files to the calib repository.
-```
-$ makePfsDefects --mko 2>&1 | tee -a calib15dec2023.log
-$ ingestPfsCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB "$DRP_PFS_DATA_DIR"/detectorMap/detectorMap-sim-*.fits --mode=copy --validity 1000 2>&1 | tee -a test_calib.log
-$ ingestCuratedCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB "$DRP_PFS_DATA_DIR"/curated/pfs/defects 2>&1 | tee -a test_calib.log
-$ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/maozy/test_calib_15dec23 --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/CALIB/IPC/*.fits 2>&1 | tee -a calib15dec2023.log
+$ ingestPfsCalibs.py /work/drp --calib $CALIB $DRP_PFS_DATA_DIR/detectorMap/detectorMap-sim-*.fits --mode=copy --validity 1000 2>&1 | tee -a test_calib.log
+$ ingestCuratedCalibs.py /work/drp --calib $CALIB $DRP_PFS_DATA_DIR/curated/pfs/defects 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/CALIB/IPC/*.fits 2>&1 | tee -a calib15dec2023.log
 ```
 
 ## Calibration products
@@ -142,25 +139,25 @@ The information of raw calibration images can be found on [wiki page](https://su
 
 You need to start with `BIAS`.
 ```
-$ constructPfsBias.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
-$ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/BIAS/*.fits 2>&1 | tee -a test_calib.log
+$ constructPfsBias.py /work/drp --calib $CALIB --rerun $RERUN --cores 16 --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/BIAS/*.fits 2>&1 | tee -a test_calib.log
 ```
 This step will put `BIAS` products under `/work/drp/rerun/USERNAME/CALIB/BIAS`.
 Then `DARK`.
 ```
-$ constructPfsDark.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
-$ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DARK/*.fits 2>&1 | tee -a test_calib.log
+$ constructPfsDark.py /work/drp --calib $CALIB --rerun $RERUN --cores 16 --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib $RERUN --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/DARK/*.fits 2>&1 | tee -a test_calib.log
 ```
 This step will put `DARK` products under `/work/drp/rerun/USERNAME/CALIB/DARK`.
 Next is `FLAT`. Note that a dithered flat is needed here.
 ```
-$ constructFiberFlat.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID arm=ARM 2>&1 | tee -a test_calib.log
+$ constructFiberFlat.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 16 --id visit=VISIT-ID arm=ARM 2>&1 | tee -a test_calib.log
 $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/FLAT/*.fits 2>&1 | tee -a test_calib.log
 ```
 This will put `FLAT` products under `/work/drp/rerun/USERNAME/CALIB/FLAT`.
 Afterwards, you can construct `FIBERPROFILES`.
 ```
-$ constructFiberProfiles.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 8 --id visit=VISIT-ID arm=ARM slitOffset=0.0 2>&1 | tee -a test_calib.log
+$ constructFiberProfiles.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --cores 16 --id visit=VISIT-ID arm=ARM slitOffset=0.0 2>&1 | tee -a test_calib.log
 $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/FIBERPROFILES/*.fits 2>&1 | tee -a test_calib.log
 ```
 This will put `FIBERPROFILES` products under `/work/drp/rerun/USERNAME/CALIB/FIBERPROFILES`.
@@ -175,10 +172,10 @@ This will put `DETECTORMAP` products under `/work/drp/rerun/USERNAME/CALIB/DETEC
 ### Dark, bias and flat
 To build calibs from scratch, we need to make dark, bias and flat first. It is the same as in section *"Calibration products"*. 
 ```
-$ constructPfsBias.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --batch-type=smp --cores 8 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
-$ constructPfsDark.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --batch-type=smp --cores 8 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
-$ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/BIAS/*.fits 2>&1 | tee -a test_calib.log
-$ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DARK/*.fits 2>&1 | tee -a test_calib.log
+$ constructPfsBias.py /work/drp --calib $CALIB --rerun USERNAME/CALIB/calib_test --batch-type=smp --cores 16 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
+$ constructPfsDark.py /work/drp --calib $CALIB --rerun USERNAME/CALIB/calib_test --batch-type=smp --cores 16 --doraise --id visit=VISIT-ID 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/BIAS/*.fits 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/USERNAME/CALIB/calib_test/DARK/*.fits 2>&1 | tee -a test_calib.log
 ```
 Note that at the current stage, we use fake `flat`, which can be ingested from `/work/drp/CALIB`. 
 ```
@@ -228,15 +225,17 @@ $ reduceProfiles.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID 
 The data processing procedure follows the following flowchart.
 ![Alt text](flowchart.png)
 
+When you work on local data, you first need to download them from pfsa server. You can download science images, calibrations and pfsConfig files from the pfsa server to the empty data repository.
+
 The data processing starts with ingesting calibrations.  
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`.  It is also suggested to execute all commands at the same location and write down a log to file `test_processing.log` by `2>&1 | tee -a test_processing.log`. 
 ```
-$ EXPORT PFS_PATH=/PATH/TO/pfs/
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/BIAS/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/DARK/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FIBERPROFILES/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise --config clobber=True -- "$PFS_PATH"/drp/CALIB/DETECTORMAP/*.fits 2>&1 | tee -a test_processing.log
+$ PFS_PATH=/PATH/TO/pfs/
+$ ingestPfsCalibs.py $PFS_PATH/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/BIAS/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py $PFS_PATH/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/DARK/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py $PFS_PATH/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py $PFS_PATH/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FIBERPROFILES/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py $PFS_PATH/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise --config clobber=True -- "$PFS_PATH"/drp/CALIB/DETECTORMAP/*.fits 2>&1 | tee -a test_processing.log
 ```
 
 The next step is to ingest raw science images.  
