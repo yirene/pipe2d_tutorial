@@ -104,27 +104,6 @@ $ chmod 0600 ~/.pgpass
 
 `pipe2d` commands are used in the format `command input [option]` (input is the path to the input data repository). All `pipe2d` pipeline commands share the same set of arguments. `--rerun OUTPUT` sets OUTPUT to `/rerun/OUTPUT` relative to the input data repository path. In the following sample, the OUTPUT will be in `/PATH/TO/pfs/drp/rerun/OUTPUT`. `--config NAME=VALUE` configs overrides. `--mode {move, copy, link, skip}` determines the mode of delivering the files to their destination. `--validity=VALIDITY` sets the calibration validity period (in days). `--longlog=1` enables more verbose logging.
 
-The data processing starts with ingesting calibrations.  
-Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`.  It is also suggested to execute all commands at the same location and write down a log to file `test_processing.log` by `2>&1 | tee -a test_processing.log`. 
-```
-$ EXPORT PFS_PATH=/PATH/TO/pfs/
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/BIAS/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/DARK/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FIBERPROFILES/*.fits 2>&1 | tee -a test_processing.log
-$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise --config clobber=True -- "$PFS_PATH"/drp/CALIB/DETECTORMAP/*.fits 2>&1 | tee -a test_processing.log
-```
-
-The next step is to ingest raw science images.  
-Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check [datamodel](https://github.com/Subaru-PFS/datamodel/blob/a5eb4c04878dd58b2dfeb1eeda9a15fee8e7e717/datamodel.txt) for more information.)
-
-Note: in each data repository, raw images can be ingested only once.
-```
-$ ingestPfsImages.py "$PFS_PATH"/drp --calib="$PFS_PATH"/drp/rerun/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir="$PFS_PATH"/drp/pfsConfig -- "$PFS_PATH"/drp/data/PFSA*.fits 2>&1 | tee -a test_processing.log
-```
-Note: `"$PFS_PATH"/drp` should be the same throughout the data processing. `--calib="$PFS_PATH"/drp/rerun/CALIB` should contain `registry.sqlite3` file.
-
-This step creates ingested calibrations in `"$PFS_PATH"/drp/rerun/CALIB`, and ingested images in `"$PFS_PATH"/drp/OBSERVATION-DATE`. It also puts the mask design used in ingestion (pfsConfig file) in `"$PFS_PATH"/drp/pfsConfig/OBSERVATION-DATE`.
 
 Then, you need to set the defects.
 ```
@@ -248,6 +227,28 @@ $ reduceProfiles.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID 
 # Data processing
 The data processing procedure follows the following flowchart.
 ![Alt text](flowchart.png)
+
+The data processing starts with ingesting calibrations.  
+Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`.  It is also suggested to execute all commands at the same location and write down a log to file `test_processing.log` by `2>&1 | tee -a test_processing.log`. 
+```
+$ EXPORT PFS_PATH=/PATH/TO/pfs/
+$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/BIAS/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --config clobber=True --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/DARK/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise -- "$PFS_PATH"/drp/CALIB/FIBERPROFILES/*.fits 2>&1 | tee -a test_processing.log
+$ ingestPfsCalibs.py "$PFS_PATH"/drp --rerun=CALIB --validity=30 --longlog=1 --mode=copy --doraise --config clobber=True -- "$PFS_PATH"/drp/CALIB/DETECTORMAP/*.fits 2>&1 | tee -a test_processing.log
+```
+
+The next step is to ingest raw science images.  
+Note: raw image file name follows the format `PF%1sA%06d%1d%1d.fits (site, visit, spectrograph, armNum)` (Check [datamodel](https://github.com/Subaru-PFS/datamodel/blob/a5eb4c04878dd58b2dfeb1eeda9a15fee8e7e717/datamodel.txt) for more information.)
+
+Note: in each data repository, raw images can be ingested only once.
+```
+$ ingestPfsImages.py "$PFS_PATH"/drp --calib="$PFS_PATH"/drp/rerun/CALIB --longlog=1 --mode=copy --doraise --pfsConfigDir="$PFS_PATH"/drp/pfsConfig -- "$PFS_PATH"/drp/data/PFSA*.fits 2>&1 | tee -a test_processing.log
+```
+Note: `"$PFS_PATH"/drp` should be the same throughout the data processing. `--calib="$PFS_PATH"/drp/rerun/CALIB` should contain `registry.sqlite3` file.
+
+This step creates ingested calibrations in `"$PFS_PATH"/drp/rerun/CALIB`, and ingested images in `"$PFS_PATH"/drp/OBSERVATION-DATE`. It also puts the mask design used in ingestion (pfsConfig file) in `"$PFS_PATH"/drp/pfsConfig/OBSERVATION-DATE`.
 
 You can now extract spectra using `reduceExposure.py`.
 
