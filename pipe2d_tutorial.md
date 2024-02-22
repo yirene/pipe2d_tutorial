@@ -21,7 +21,8 @@ $ git lfs install
 You can also install git-lfs without admin permission. Choose a directory you want to install git-lfs in.
 ```
 $ wget https://github.com/git-lfs/git-lfs/releases/download/v3.4.0/git-lfs-linux-amd64-v3.4.0.tar.gz
-$ tar xzf git-lfs-linux-amd64-v3.4.0.tar.gz$cd git-lfs-3.4.0
+$ tar xzf git-lfs-linux-amd64-v3.4.0.tar.gz
+$ cd git-lfs-3.4.0
 $ PREFIX=$(dirname $(command -v git)) ./install.sh
 ```
 
