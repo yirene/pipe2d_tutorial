@@ -255,7 +255,39 @@ $ ingestPfsCalibs.py /work/drp --output=$CALIB --validity=1800 --doraise --mode=
 ```
 
 ## Check the quality of calibs
-There are two QA tasks, extractionQA and detectorMapQA we can run to check the quality of calibs we made. To run these two tasks, we need to 
+There are two QA tasks, `extractionQa.py` and `detectorMapQa.py` that we can run to check the quality of calibs we made. To run these two tasks, we need to run `reduceExposure.py` first.
+### Reduce exposures
+Choose a visit (arc, quartz, or science) and reduce it with calibs we want to test. And make a path to store output of reduce exposures and QAs.
+```
+mkdir -p /work/drp/rerun/USERNAME/PATH/TO/test_rerun
+RERUN=USERNAME/PATH/TO/test_rerun
+
+reduceExposure.py /work/drp --calib=$CALIB --rerun=$RERUN -j 16 --longlog 1 --id visit=VISIT-ID spectrograph=SPECTROGRAPH arm=ARM --config isr.doFlat=True adjustDetectorMap.doSlitOffsets=False --clobber-config --no-versions 2>&1 | tee -a $LOG/extractionQA/reduceExposure.log
+```
+Note: for n arm, use `isr.doFlatNir=True` instead of `isr.doFlat=True`.
+
+### DetectorMap QA
+First, we need to load packages with QA tasks.
+```
+setup -jr /work/wtg/obs_pfs
+RERUN=USERNAME/PATH/TO/test_rerun
+```
+Then make detectormap QA.
+```
+detectorMapQa.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --no-versions --clobber-config --longlog 1 2>&1 | tee -a $LOG/DMQA-[arm][spectrograph].log
+```
+The visit id corresponds to the visit we reduced.
+
+### Extraction QA
+We need to load the package contains QA tasks if it hadn't been done.
+```
+setup -jr /work/wtg/obs_pfs
+RERUN=USERNAME/PATH/TO/test_rerun
+```
+Then make extraction QA.
+```
+extractionQa.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --clobber-config --no-versions --longlog 1 2>&1 | tee -a $LOG/extractionQA-[arm][spectrograph].log
+```
 
 # Data processing
 The data processing procedure follows the following flowchart.
