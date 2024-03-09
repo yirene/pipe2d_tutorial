@@ -184,44 +184,76 @@ Note that at the current stage, we use fake `flat`, which can be ingested from `
 ```
 $ ingestPfsCalibs.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/CALIB/FLAT/*.fits 2>&1 | tee -a test_calib.log
 ```
-Also note that `/work/drp/CALIB/FLAT/pfsFlat-2023-04-25-091223-n2.fits` is not usable at the moment (2024.02.09). In case there is no `flat` available, use config keyword `isr.doFlat=False` or `reduceExposure.isr.doFlat=False` for optical calibs, and `isr.doFlatNir=False` or `reduceExposure.isr.doFlatNir=False` for near-infrared calibs.
+Also note that `/work/drp/CALIB/FLAT/pfsFlat-2023-04-25-091223-n2.fits` is not usable at the moment (2024.02.09). In case there is no `flat` available, use config keyword `isr.doFlat=False` or `reduceExposure.isr.doFlat=False` for optical calibs, and `isr.doFlatNir=False` or `reduceExposure.isr.doFlatNir=False` for n2 calibs.
 
 ### Bootstrap detectormap
  `bootstrapDetectorMap.py` can transform the simulated `DETECTORMAP` to approach actual `DETECTORMAP` used in observation. It is recommended to run bootstrap for only one arm and one spectrograph at one time. 
 Before running `bootstrapDetectorMap.py`, we need to ingest simulated `DETECTORMAP`.
 ```
-ingestPfsCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB $DRP_PFS_DATA_DIR/detectorMap/detectorMap-sim-*.fits --mode=copy --validity 100000 -c clobber=True 2>&1 | tee -a test_calib.log
+$ ingestPfsCalibs.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB $DRP_PFS_DATA_DIR/detectorMap/detectorMap-sim-*.fits --mode=copy --validity 100000 -c clobber=True 2>&1 | tee -a test_calib.log
 ```
 
 Here is an example of bootstrap process.
 ```
-$ bootstrapDetectorMap.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --flatId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --arcId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH fiberStatus=["GOOD"] profiles.mask=['CR', 'BAD', 'SAT', 'NO_DATA', 'IPC'] profiles.findThreshold=500 spatialOffset=18.0 spectralOffset=-10.0 findLines.threshold=50 readLineList.minIntensity=50 spatialOrder=2 spectralOrder=2 rejThreshold=5 --no-versions --clobber-config 2>&1 | tee -a test_calib.log
+$ bootstrapDetectorMap.py /work/drp --calib /work/drp/rerun/USERNAME/CALIB --rerun USERNAME/CALIB/calib_test --flatId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --arcId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH fiberStatus=["GOOD"] profiles.mask=['CR', 'BAD', 'SAT', 'NO_DATA', 'IPC'] profiles.findThreshold=500 spatialOffset=18.0 spectralOffset=-10.0 findLines.threshold=50 readLineList.minIntensity=50 spatialOrder=2 spectralOrder=2 rejThreshold=5 --no-versions --clobber-config 2>&1 | tee -a $LOG/bootstrap-[ARM][SPECTROGRAPH].log
 
 ```
 In the flat is required to be a quartz at a slit dither of 0. Please check the observation information in advance to see which arm and spectrograph each visit corresponds to.
 Configs `profiles.findThreshold`, `profiles.mask`, and `fiberStatus` can be used to constrain usable fibers.
-After selecting the proper number of fibers, we need to set the configs for fitting. The first two keywords we need to set are `spatialOffset` and `spectralOffset`. To find the approximate values of `spatialOffset` and `spectralOffset`, we can overlap the simulated `DETECTORMAP` on top of the observed image, then count the pixels between simulated emission lines and observed emission lines. Once the offsets are fixed, we can adjust `findLines.threshold`, `readLineList.minIntensity`, and `rejThreshold` to increase the lines used in fitting and improve the fitting quality. The `readLineList.minIntensity` changes the number of lines in line list this command used to fit, for each arm, this value should be the same. `findLines.threshold` is the threshold for observed line used in the fitting. `rejThreshold` is used to remove outliers, but it is not suggested to change this value a lot. The more lines per fiber used in the fitting, the more reliable this fitting can be. Ideally, we wnat to have 10 lines/fiber. Another quick check we can do for bootstrap quality is the to check the rms in the log. A good fitting should have rms <0.1 in both axes for optical and rms <0.2 in both axes for near-infrared.
+After selecting the proper number of fibers, we need to set the configs for fitting. The first two keywords we need to set are `spatialOffset` and `spectralOffset`. To find the approximate values of `spatialOffset` and `spectralOffset`, we can overlap the simulated `DETECTORMAP` on top of the observed image, then count the pixels between simulated emission lines and observed emission lines. 
+Once the offsets are fixed, we can adjust `findLines.threshold`, `readLineList.minIntensity`, and `rejThreshold` to increase the lines used in fitting and improve the fitting quality. The `readLineList.minIntensity` changes the number of lines in line list this command used to fit, for each arm, this value should be the same. `findLines.threshold` is the threshold for observed line used in the fitting. `rejThreshold` is used to remove outliers, but it is not suggested to change this value a lot. 
+The more lines per fiber used in the fitting, the more reliable this fitting can be. Ideally, we want to have 10 lines/fiber. Another quick check we can do for bootstrap quality is the to check the rms in the log. A good fitting should have rms <0.1 in both axes for optical and rms <0.2 in both axes for near-infrared.
+
+We need to remove ingested simulated detectormap in calib repository first. 
+```
+$ sqlite3 $CALIB/calibRegistry.sqlite3 'delete from detectormap where visit0=0'
+$ rm $CALIB/DETECTORMAP/pfsDetectorMap-000000-*
+```
+Then we can ingest bootstrap detectormaps.
+```
+$ ingestPfsCalibs.py /work/drp --output=$CALIB --validity=1800 --doraise --mode=copy --config clobber=True -- /work/drp/rerun/$RERUN/DETECTORMAP/pfsDetectorMap-*.fits 2>&1 | tee -a $LOG/ingest.log
+$ rm -r /work/drp/rerun/$RERUN/DETECTORMAP
+```
+
 
 ### Construct fiber profiles
-Then we make rough fiber profiles based on bootstrap detectormap. We need to know that the quality of bootstrap detectormaps are not good enough as a proper detectormap. So we can use `constructFiberProfiles.py`, which is not sensitive to detectormap to make fiber profiles in this step. Still we recommend to run for each arm and spectrograph separately.
+In this step, we make rough fiber profiles based on bootstrap detectormap. We need to know that the quality of bootstrap detectormaps are not good enough as a proper detectormap. So we can use `constructFiberProfiles.py`, which is not sensitive to detectormap to make fiber profiles in this step. Still we recommend to run for each arm and spectrograph separately.
 ```
-constructFiberProfiles.py /work/drp --calib=/work/drp/rerun/USERNAME/CALIB --rerun=USERNAME/CALIB/calib_test --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 isr.doFlat=True doAdjustDetectorMap=True adjustDetectorMap.doSlitOffsets=True --cores 16 --clobber-config 2>&1 | tee -a test_calib.log 
+$ constructFiberProfiles.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 isr.doFlat=True doAdjustDetectorMap=True adjustDetectorMap.doSlitOffsets=True --cores 16 --clobber-config 2>&1 | tee -a $LOG/fiberprofiles-[ARM][SPECTROGRAPH].log 
 ```
-Configs `isr.doFlat=True`, `doAdjustDetectorMap=True`, and `adjustDetectorMap.doSlitOffsets=True` are necessary.
+Configs `isr.doFlat=True`, `doAdjustDetectorMap=True`, and `adjustDetectorMap.doSlitOffsets=True` are necessary. For near-infrared arm, use config `isr.doFlatNir=True`.
+Then we can ingest the fiberprofiles into calib repository.
+```
+$ ingestPfsCalibs.py /work/drp --output=$CALIB --validity=1800 --doraise --mode=copy --config clobber=True -- /work/drp/rerun/$RERUN/FIBERPROFILES/pfsFiberProfiles-*.fits 2>&1 | tee -a $LOG/ingest.log
+$ rm -r /work/drp/rerun/$RERUN/FIBERPROFILES
+```
 
 ### Construct detectormap
 The next step we can use the fiber profiles to make detectormaps.
 ```
-$ reduceArc.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID spectrograph=SPECTROGRAPH  -c reduceExposure.isr.doFlat=True reduceExposure.isr.doFlatNir=True fitDetectorMap.doSlitOffsets=True -j 16 --clobber-config --no-versions 2>&1 | tee -a test_calib.log
+$ reduceArc.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID spectrograph=SPECTROGRAPH  -c reduceExposure.isr.doFlat=True reduceExposure.isr.doFlatNir=True fitDetectorMap.doSlitOffsets=True -j 16 --clobber-config --no-versions 2>&1 | tee -a $LOG/detectormap-[ARM][SPECTROGRAPH].log
 ```
 In this step, it is necessary to set configs `reduceExposure.isr.doFlat=True`, `reduceExposure.isr.doFlatNir=True` and `fitDetectorMap.doSlitOffsets=True`. 
+Then we need to remove the bootstrap detectormaps in calib repository and ingest the detectormaps we make in this step.
+```
+$ sqlite3 $CALIB/calibRegistry.sqlite3 'delete from detectormap'
+$ rm $CALIB/DETECTORMAP/pfsDetectorMap-*
+$ ingestPfsCalibs.py /work/drp --output=$CALIB --validity=1800 --doraise --mode=copy --config clobber=True -- /work/drp/rerun/$RERUN/DETECTORMAP/pfsDetectorMap-*.fits 2>&1 | tee -a $LOG/ingest.log
+```
 
 ### Construct final fiber profiles
 The previous fiber profiles were made from bootstrap detectormaps, which were not accurate. Now with appropriate detectormaps, we can make proper fiber profiles.
 ```
-$ reduceProfiles.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --normId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 reduceExposure.isr.doFlat=True reduceExposure.doAdjustDetectorMap=True reduceExposure.adjustDetectorMap.doSlitOffsets=True -C configs/profilesConfig-b4.py --clobber-config 2>&1 | tee -a test.log
+$ reduceProfiles.py /work/drp --calib=$CALIB --rerun=$RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --normId visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 reduceExposure.isr.doFlat=True reduceExposure.doAdjustDetectorMap=True reduceExposure.adjustDetectorMap.doSlitOffsets=True -C configs/profilesConfig-b4.py --clobber-config 2>&1 | tee -a $LOG/final-fiberprofiles-[ARM][SPECTROGRAPH].log
 ```
 
+And we can remove the previous inaccurate fiberprofiles and ingest the ones we build in this step.
+```
+#remove previous fiber profiles
+$ sqlite3 $CALIB/calibRegistry.sqlite3 'delete from fiberprofiles'
+$ rm $CALIB/FIBERPROFILES/pfsFiberProfiles-*
+$ ingestPfsCalibs.py /work/drp --output=$CALIB --validity=1800 --doraise --mode=copy --config clobber=True -- /work/drp/rerun/$RERUN/FIBERPROFILES/pfsFiberProfiles-*-b4.fits 2>&1 | tee -a $LOG/ingest.log
+```
 
 
 # Data processing
