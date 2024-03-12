@@ -158,13 +158,13 @@ $ constructFiberFlat.py /work/drp --calib $CALIB --rerun $RERUN --cores 16 --id 
 $ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/FLAT/*.fits 2>&1 | tee -a $LOG/ingest.log
 ```
 This will put `FLAT` products under `$CALIB/FLAT`.
-Afterwards, you can construct `FIBERPROFILES`.
+Afterwards, you can construct `FIBERPROFILES`. One or more quartz lamp visit is required to be used to produce fiber profiles.
 ```
 $ constructFiberProfiles.py /work/drp --calib $CALIB --rerun $RERUN --cores 16 --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH slitOffset=0.0 2>&1 | tee -a $LOG/fiberprofiles.log
 $ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/FIBERPROFILES/*.fits 2>&1 | tee -a $LOG/ingest.log
 ```
 This will put `FIBERPROFILES` products under `$CALIB/FIBERPROFILES`.
-And last one is `DETECTORMAP`(wavelength solution).
+And last one is `DETECTORMAP`(wavelength solution). We use arc visits to make detector maps.
 ```
 $ reduceArc.py /work/drp --calib $CALIB --rerun $RERUN -j 16 --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH 2>&1 | tee -a $LOG/detectormap.log
 $ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/DETECTORMAP/*.fits 2>&1 | tee -a $LOG/ingest.log
@@ -217,7 +217,7 @@ $ rm -r /work/drp/rerun/$RERUN/DETECTORMAP
 
 
 ### Construct fiber profiles
-In this step, we make rough fiber profiles based on bootstrap detectormap. We need to know that the quality of bootstrap detectormaps are not good enough as a proper detectormap. So we can use `constructFiberProfiles.py`, which is not sensitive to detectormap to make fiber profiles in this step. Still we recommend to run for each arm and spectrograph separately.
+In this step, we make rough fiber profiles based on bootstrap detectormap. We need to know that the quality of bootstrap detectormaps are not good enough as a proper detectormap. So we can use `constructFiberProfiles.py`, which is not sensitive to detectormap to make fiber profiles in this step. Still we recommend to run for each arm and spectrograph separately. The visit we use in this step is one or more quartz visit.
 ```
 $ constructFiberProfiles.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH -c profiles.profileRadius=3 profiles.profileOversample=3 profiles.profileSwath=2000 profiles.profileRejThresh=5 isr.doFlat=True doAdjustDetectorMap=True adjustDetectorMap.doSlitOffsets=True --cores 16 --clobber-config 2>&1 | tee -a $LOG/fiberprofiles-[ARM][SPECTROGRAPH].log 
 ```
@@ -229,7 +229,7 @@ $ rm -r /work/drp/rerun/$RERUN/FIBERPROFILES
 ```
 
 ### Construct detectormap
-The next step we can use the fiber profiles to make detectormaps.
+The next step we can use the fiber profiles to make detectormaps. The visit we use for this step is arc visit.
 ```
 $ reduceArc.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID spectrograph=SPECTROGRAPH  -c reduceExposure.isr.doFlat=True reduceExposure.isr.doFlatNir=True fitDetectorMap.doSlitOffsets=True -j 16 --clobber-config --no-versions 2>&1 | tee -a $LOG/detectormap-[ARM][SPECTROGRAPH].log
 ```
