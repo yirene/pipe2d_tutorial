@@ -160,13 +160,13 @@ $ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --conf
 This will put `FLAT` products under `$CALIB/FLAT`.
 Afterwards, you can construct `FIBERPROFILES`.
 ```
-$ constructFiberProfiles.py /work/drp --calib $CALIB --rerun $RERUN --cores 16 --id visit=VISIT-ID arm=ARM slitOffset=0.0 2>&1 | tee -a $LOG/fiberprofiles.log
+$ constructFiberProfiles.py /work/drp --calib $CALIB --rerun $RERUN --cores 16 --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH slitOffset=0.0 2>&1 | tee -a $LOG/fiberprofiles.log
 $ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/FIBERPROFILES/*.fits 2>&1 | tee -a $LOG/ingest.log
 ```
 This will put `FIBERPROFILES` products under `$CALIB/FIBERPROFILES`.
 And last one is `DETECTORMAP`(wavelength solution).
 ```
-$ reduceArc.py /work/drp --calib $CALIB --rerun $RERUN -j 16 --id visit=VISIT-ID arm=ARM 2>&1 | tee -a $LOG/detectormap.log
+$ reduceArc.py /work/drp --calib $CALIB --rerun $RERUN -j 16 --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH 2>&1 | tee -a $LOG/detectormap.log
 $ ingestPfsCalibs.py /work/drp --calib $CALIB --validity=1000 --longlog=1 --config clobber=True --mode=copy --doraise -- /work/drp/rerun/$RERUN/DETECTORMAP/*.fits 2>&1 | tee -a $LOG/ingest.log
 ```
 This will put `DETECTORMAP` products under `$CALIB/DETECTORMAP`.
