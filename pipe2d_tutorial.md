@@ -274,19 +274,19 @@ $ RERUN=USERNAME/PATH/TO/test_rerun
 ```
 Then make detectormap QA.
 ```
-detectorMapQa.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --no-versions --clobber-config --longlog 1 2>&1 | tee -a $LOG/DMQA-[arm][spectrograph].log
+$ detectorMapQa.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --no-versions --clobber-config --longlog 1 2>&1 | tee -a $LOG/DMQA-[arm][spectrograph].log
 ```
 The visit id corresponds to the visit we reduced.
 
 ### Extraction QA
 We need to load the package contains QA tasks if it hadn't been done.
 ```
-setup -jr /work/wtg/obs_pfs
-RERUN=USERNAME/PATH/TO/test_rerun
+$ setup -jr /work/wtg/obs_pfs
+$ RERUN=USERNAME/PATH/TO/test_rerun
 ```
 Then make extraction QA.
 ```
-extractionQa.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --clobber-config --no-versions --longlog 1 2>&1 | tee -a $LOG/extractionQA-[arm][spectrograph].log
+$ extractionQa.py /work/drp --calib $CALIB --rerun $RERUN --id visit=VISIT-ID arm=ARM spectrograph=SPECTROGRAPH --clobber-config --no-versions --longlog 1 2>&1 | tee -a $LOG/extractionQA-[arm][spectrograph].log
 ```
 
 # Data processing
