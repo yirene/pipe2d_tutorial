@@ -116,7 +116,7 @@ Here, `--mko` is for observation data taken in Mauna Kea, and the option is `--l
 Note that `$DRP_PFS_DATA_DIR` should be a writable directory. On pfsa server, you can copy `/work/stack_INFRA-312/stack/miniconda3-py38_4.9.2-3.0.0/Linux64/drp_pfs_data/VERSION` (`VERSION` corresponds to pipeline version) to your own directory, e.g., `/home/USERNAME` or `/work/USERNAME`, then load it using `setup -jr /PATH/TO/drp_pfs_data`.
 
 # Constructing calibrations
-*Calibs* are calibration products where the behaviour of the instrument is modelled. Calibs are created in the order `BIAS`, `DARK`, `FLAT`, `FIBERPROFILES`, `DETECTORMAP`(wavelength solution). On pfsa server, `\work\drp\CALIB` already contains calibration products, which you can ingest and use. It is not necessary to make your own calibrations every time, but when there are major changes on the telescope, it is better to make new CALIBs.
+*Calibs* are calibration products where the behaviour of the instrument is modelled. Calibs are created in the order `BIAS`, `DARK`, `FLAT`, `FIBERPROFILES`, `DETECTORMAP`(wavelength solution). On pfsa server, `/work/drp/CALIB` already contains calibration products, which you can ingest and use. It is not necessary to make your own calibrations every time, but when there are major changes on the telescope, it is better to make new CALIBs.
 
 Note: This section only discusses constructing calibs on the pfsa server. Commands should be similar if you work locally, but please take care of paths of data repository and calibs.
 
@@ -281,7 +281,6 @@ The visit id corresponds to the visit we reduced.
 ### Extraction QA
 We need to load the package contains QA tasks if it hadn't been done.
 ```
-$ setup -jr /work/wtg/obs_pfs
 $ RERUN=USERNAME/PATH/TO/test_rerun
 ```
 Then make extraction QA.
@@ -295,7 +294,7 @@ The data processing procedure follows the following flowchart.
 
 When you work on local data, you first need to download them from pfsa server. You can download science images, calibrations and pfsConfig files from the pfsa server to the empty data repository.
 
-The data processing starts with ingesting calibrations.  
+The data processing starts with ingesting calibrations. In the case we make our own calibs following previous section, this step should be skipped.
 Note: it is suggested to put downloaded calibration files in the directory `/PATH/TO/pfs/drp/CALIB`. It is also suggested to make a separate log repository for each rerun.
 ```
 $ PFS_PATH=/PATH/TO/pfs/
