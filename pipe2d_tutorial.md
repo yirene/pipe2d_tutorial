@@ -259,18 +259,18 @@ There are two QA tasks, `extractionQa.py` and `detectorMapQa.py` that we can run
 ### Reduce exposures
 Choose a visit (arc, quartz, or science) and reduce it with calibs we want to test. And make a path to store output of reduce exposures and QAs.
 ```
-mkdir -p /work/drp/rerun/USERNAME/PATH/TO/test_rerun
-RERUN=USERNAME/PATH/TO/test_rerun
+$ mkdir -p /work/drp/rerun/USERNAME/PATH/TO/test_rerun
+$ RERUN=USERNAME/PATH/TO/test_rerun
 
-reduceExposure.py /work/drp --calib=$CALIB --rerun=$RERUN -j 16 --longlog 1 --id visit=VISIT-ID spectrograph=SPECTROGRAPH arm=ARM --config isr.doFlat=True adjustDetectorMap.doSlitOffsets=False --clobber-config --no-versions 2>&1 | tee -a $LOG/extractionQA/reduceExposure.log
+$ reduceExposure.py /work/drp --calib=$CALIB --rerun=$RERUN -j 16 --longlog 1 --id visit=VISIT-ID spectrograph=SPECTROGRAPH arm=ARM --config isr.doFlat=True adjustDetectorMap.doSlitOffsets=False --clobber-config --no-versions 2>&1 | tee -a $LOG/extractionQA/reduceExposure.log
 ```
 Note: for n arm, use `isr.doFlatNir=True` instead of `isr.doFlat=True`.
 
 ### DetectorMap QA
 First, we need to load packages with QA tasks.
 ```
-setup -jr /work/wtg/obs_pfs
-RERUN=USERNAME/PATH/TO/test_rerun
+$ setup -jr /work/wtg/obs_pfs
+$ RERUN=USERNAME/PATH/TO/test_rerun
 ```
 Then make detectormap QA.
 ```
